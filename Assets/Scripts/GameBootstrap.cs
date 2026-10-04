@@ -36,6 +36,7 @@ namespace SudokuGame
         {
             Application.targetFrameRate = 60;
             api = gameObject.AddComponent<ApiClient>();
+            gameObject.AddComponent<AudioManager>();
             var canvas = BuildCanvas();
             EnsureEventSystem();
 

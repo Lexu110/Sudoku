@@ -261,8 +261,46 @@ namespace SudokuGame
                 fadeDuration = 0.08f
             };
             if (onClick != null) button.onClick.AddListener(() => onClick());
+            button.onClick.AddListener(() => AudioManager.Play(Sfx.Click));
             panel.gameObject.AddComponent<ButtonJuice>();
             return button;
+        }
+
+        /// <summary>Horizontal 0..1 slider built from code. onChanged is called while dragging.</summary>
+        public static Slider MakeSlider(Transform parent, Vector2 size, float value, Action<float> onChanged)
+        {
+            var root = NewRect(parent, "Slider");
+            root.sizeDelta = size;
+            var slider = root.gameObject.AddComponent<Slider>();
+
+            var track = Box(root, "Track", Surface, Rounded(8));
+            track.rectTransform.anchorMin = new Vector2(0, 0.5f);
+            track.rectTransform.anchorMax = new Vector2(1, 0.5f);
+            track.rectTransform.sizeDelta = new Vector2(0, 16);
+
+            var fillArea = NewRect(root, "Fill Area");
+            fillArea.anchorMin = new Vector2(0, 0.5f);
+            fillArea.anchorMax = new Vector2(1, 0.5f);
+            fillArea.sizeDelta = new Vector2(0, 16);
+            var fill = Box(fillArea, "Fill", Accent, Rounded(8));
+            fill.rectTransform.anchorMin = Vector2.zero;
+            fill.rectTransform.anchorMax = Vector2.one;
+            fill.rectTransform.sizeDelta = Vector2.zero;
+
+            var handleArea = NewRect(root, "Handle Slide Area");
+            Stretch(handleArea, 18, 18, 0, 0);
+            var handle = Box(handleArea, "Handle", Color.white, Rounded(18), true);
+            handle.rectTransform.sizeDelta = new Vector2(36, 36);
+
+            slider.fillRect = fill.rectTransform;
+            slider.handleRect = handle.rectTransform;
+            slider.targetGraphic = handle;
+            slider.direction = Slider.Direction.LeftToRight;
+            slider.minValue = 0f;
+            slider.maxValue = 1f;
+            slider.SetValueWithoutNotify(value);
+            slider.onValueChanged.AddListener(v => onChanged?.Invoke(v));
+            return slider;
         }
 
         public static InputField MakeInput(Transform parent, Vector2 size, string placeholder, int maxLength)
@@ -330,7 +368,11 @@ namespace SudokuGame
     {
         bool hover, down;
 
-        public void OnPointerEnter(PointerEventData e) => hover = true;
+        public void OnPointerEnter(PointerEventData e)
+        {
+            hover = true;
+            AudioManager.Play(Sfx.Hover);
+        }
         public void OnPointerExit(PointerEventData e) { hover = false; down = false; }
         public void OnPointerDown(PointerEventData e) => down = true;
         public void OnPointerUp(PointerEventData e) => down = false;

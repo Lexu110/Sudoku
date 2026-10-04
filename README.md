@@ -9,6 +9,7 @@ A modern, neon-styled Sudoku game built with Unity. Create an account, choose a 
 - Score based on solve time, with points deducted for every mistake
 - Auto-Solve available, but it forfeits all points and is not submitted
 - Mouse and keyboard controls
+- Sound effects and background music (generated in code, with volume sliders in Settings)
 - Runs on macOS, Windows and Linux
 
 ## Scoring
@@ -55,6 +56,7 @@ Assets/Scripts/
     SaveData.cs           Logged-in username and token (PlayerPrefs JSON)
     TimeFormat.cs         mm:ss formatting
     KeyBindings.cs        Rebindable keys (PlayerPrefs JSON)
+    AudioManager.cs       Synthesized sound effects and music loop, volume settings
   UI/
     UIKit.cs              Procedural sprites, theme colours and widget builders
     AuthScreen.cs, MenuScreen.cs, GameScreen.cs,
@@ -63,5 +65,5 @@ Assets/Scripts/
 
 ## Save data
 
-The username and login token (JWT, valid about 30 days) are stored locally with `PlayerPrefs` under the key `sudoku_save_v2`. The password is never stored. Key bindings are stored under `sudoku_keys_v1`.
+The username and login token (JWT, valid about 30 days) are stored locally with `PlayerPrefs` under the key `sudoku_save_v2`. The password is never stored. Key bindings are stored under `sudoku_keys_v1`, and the music and sound volumes under `sudoku_music_volume` and `sudoku_sfx_volume`.
 

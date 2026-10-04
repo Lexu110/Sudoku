@@ -223,7 +223,7 @@ namespace SudokuGame
             for (int i = 0; i < 81; i++)
             {
                 if (isGiven[i]) continue;
-                Select(i);
+                Select(i, true);
                 selectionFrame.anchoredPosition = frameTarget;
                 break;
             }
@@ -286,9 +286,10 @@ namespace SudokuGame
             Select(row * 9 + col);
         }
 
-        void Select(int index)
+        void Select(int index, bool silent = false)
         {
             if (state != State.Playing || dialog != null) return;
+            if (!silent && index != selected) AudioManager.Play(Sfx.Select);
             selected = index;
             frameTarget = CellCenter(index / 9, index % 9);
             Refresh();
@@ -304,7 +305,9 @@ namespace SudokuGame
             {
                 mistakes++;
                 cells[selected].Shake();
+                AudioManager.Play(Sfx.Wrong);
             }
+            else if (!IsSolved()) AudioManager.Play(Sfx.Correct);
             Refresh();
             if (IsSolved()) StartCoroutine(WinRoutine());
         }
@@ -313,7 +316,9 @@ namespace SudokuGame
         {
             if (state != State.Playing || dialog != null || selected < 0) return;
             if (isGiven[selected] || values[selected] == puzzle.Solution[selected]) return;
+            if (values[selected] == 0) return;
             values[selected] = 0;
+            AudioManager.Play(Sfx.Erase);
             Refresh();
         }
 
@@ -340,6 +345,7 @@ namespace SudokuGame
             var result = MakeResult(false);
             selected = -1;
             Refresh();
+            AudioManager.Play(Sfx.Victory);
 
             for (int k = 0; k <= 16; k++)
             {
@@ -373,6 +379,7 @@ namespace SudokuGame
                 values[i] = puzzle.Solution[i];
                 autoFilled[i] = true;
                 cells[i].Pulse();
+                AudioManager.Play(Sfx.Select, 0.5f);
                 Refresh();
                 yield return new WaitForSecondsRealtime(0.03f);
             }
