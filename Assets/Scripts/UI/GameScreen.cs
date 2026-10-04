@@ -291,7 +291,7 @@ namespace SudokuGame
 
             // A mouse click selects the cell in the EventSystem, which would make the d-pad navigate the UI.
             var es = EventSystem.current;
-            if (es != null && es.currentSelectedObject != null) es.SetSelectedGameObject(null);
+            if (es != null && es.currentSelectedGameObject != null) es.SetSelectedGameObject(null);
 
             if (pad.startButton.wasPressedThisFrame) { padActive = true; AskExit(); return; }
 

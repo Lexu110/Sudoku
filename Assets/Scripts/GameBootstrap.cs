@@ -105,7 +105,7 @@ namespace SudokuGame
             bool inGame = gameScreen.gameObject.activeInHierarchy;
             if (inGame && !gameScreen.HasDialog) return;
 
-            var current = es.currentSelectedObject;
+            var current = es.currentSelectedGameObject;
             if (current != null && current.activeInHierarchy) return;
             if (pad.dpad.ReadValue().sqrMagnitude < 0.01f && pad.leftStick.ReadValue().sqrMagnitude < 0.25f
                 && !pad.buttonSouth.wasPressedThisFrame) return;

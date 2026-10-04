@@ -47,6 +47,13 @@
 *.app
 *.exe
 
+# Packaged releases (Tools/make-deb.sh output, archives) and Unity's debug-symbols folders
+*.deb
+*.tar.gz
+*.zip
+/[Rr]eleases/
+*_BackUpThisFolder_ButDontShipItWithYourGame/
+
 # Crash and profiler output
 sysinfo.txt
 *.stackdump
