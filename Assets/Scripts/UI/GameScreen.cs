@@ -261,7 +261,7 @@ namespace SudokuGame
             var kb = Keyboard.current;
             if (kb == null) return;
 
-            if (kb.escapeKey.wasPressedThisFrame) { if (dialog == null) AskExit(); return; }
+            if (KeyBindings.WasPressed(GameAction.Leave)) { if (dialog == null) AskExit(); return; }
             if (dialog != null) return;
 
             for (int d = 1; d <= 9; d++)
@@ -270,12 +270,12 @@ namespace SudokuGame
                     kb[(Key)((int)Key.Numpad1 + d - 1)].wasPressedThisFrame)
                     Enter(d);
             }
-            if (kb.backspaceKey.wasPressedThisFrame || kb.deleteKey.wasPressedThisFrame) Erase();
+            if (KeyBindings.WasPressed(GameAction.Erase)) Erase();
 
-            if (kb.upArrowKey.wasPressedThisFrame) Move(-1, 0);
-            if (kb.downArrowKey.wasPressedThisFrame) Move(1, 0);
-            if (kb.leftArrowKey.wasPressedThisFrame) Move(0, -1);
-            if (kb.rightArrowKey.wasPressedThisFrame) Move(0, 1);
+            if (KeyBindings.WasPressed(GameAction.MoveUp)) Move(-1, 0);
+            if (KeyBindings.WasPressed(GameAction.MoveDown)) Move(1, 0);
+            if (KeyBindings.WasPressed(GameAction.MoveLeft)) Move(0, -1);
+            if (KeyBindings.WasPressed(GameAction.MoveRight)) Move(0, 1);
         }
 
         void Move(int dRow, int dCol)

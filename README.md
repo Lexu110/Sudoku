@@ -25,10 +25,12 @@ A modern, neon-styled Sudoku game built with Unity. Pick a nickname, choose a di
 
 | Action              | Input                        |
 |---------------------|------------------------------|
-| Select a cell       | Click, or arrow keys         |
+| Select a cell       | Click, or arrow keys / WASD  |
 | Enter a number      | On-screen pad, or keys 1-9   |
 | Erase a wrong entry | Erase button, Backspace/Del  |
 | Leave the game      | Leave Game button, or Esc    |
+
+Movement, Erase and Leave Game each have a primary and an alternate key that you can change in **Settings** on the main menu. Number keys 1-9 are fixed.
 
 A wrong number stays on the board in red and counts as a mistake until you erase it. Correct numbers are locked.
 
@@ -56,10 +58,11 @@ Assets/Scripts/
     SudokuPuzzle.cs       Puzzle generator and solver
     ScoreRules.cs         Scoring rules and time formatting
     SaveData.cs           Nickname and leaderboard (PlayerPrefs JSON)
+    KeyBindings.cs        Rebindable keys (PlayerPrefs JSON)
   UI/
     UIKit.cs              Procedural sprites, theme colours and widget builders
     NicknameScreen.cs, MenuScreen.cs, GameScreen.cs,
-    ResultScreen.cs, LeaderboardScreen.cs
+    ResultScreen.cs, LeaderboardScreen.cs, SettingsScreen.cs
 ```
 
 ## Save data

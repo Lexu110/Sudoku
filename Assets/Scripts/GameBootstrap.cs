@@ -17,6 +17,7 @@ namespace SudokuGame
         GameScreen gameScreen;
         ResultScreen resultScreen;
         LeaderboardScreen leaderboardScreen;
+        SettingsScreen settingsScreen;
         readonly List<GameObject> screens = new List<GameObject>();
 
         Difficulty lastDifficulty = Difficulty.Easy;
@@ -39,10 +40,11 @@ namespace SudokuGame
             gameScreen = GameScreen.Create(canvas);
             resultScreen = ResultScreen.Create(canvas);
             leaderboardScreen = LeaderboardScreen.Create(canvas);
+            settingsScreen = SettingsScreen.Create(canvas);
             screens.AddRange(new[]
             {
                 nicknameScreen.gameObject, menuScreen.gameObject, gameScreen.gameObject,
-                resultScreen.gameObject, leaderboardScreen.gameObject
+                resultScreen.gameObject, leaderboardScreen.gameObject, settingsScreen.gameObject
             });
 
             nicknameScreen.Confirmed = name =>
@@ -55,6 +57,7 @@ namespace SudokuGame
 
             menuScreen.StartGame = StartGame;
             menuScreen.ShowLeaderboard = ShowLeaderboard;
+            menuScreen.OpenSettings = () => Show(settingsScreen.gameObject);
             menuScreen.ChangeName = () =>
             {
                 Show(nicknameScreen.gameObject);
@@ -67,6 +70,7 @@ namespace SudokuGame
             resultScreen.PlayAgain = () => StartGame(lastDifficulty);
             resultScreen.ToMenu = ShowMenu;
             leaderboardScreen.Back = ShowMenu;
+            settingsScreen.Back = ShowMenu;
 
             if (string.IsNullOrEmpty(SaveData.Current.nickname))
             {

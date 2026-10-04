@@ -8,6 +8,7 @@ namespace SudokuGame
     {
         public Action<Difficulty> StartGame;
         public Action ShowLeaderboard;
+        public Action OpenSettings;
         public Action ChangeName;
 
         Text welcome, total;
@@ -46,9 +47,10 @@ namespace SudokuGame
             AddDifficulty(root, Difficulty.Medium, UIKit.Blue, -50);
             AddDifficulty(root, Difficulty.Hard, UIKit.Red, -180);
 
-            AddSmallButton(root, "Leaderboard", UIKit.Purple, -340, () => ShowLeaderboard?.Invoke());
-            AddSmallButton(root, "Change Name", UIKit.Orange, 0, () => ChangeName?.Invoke());
-            AddSmallButton(root, "Quit", UIKit.Slate, 340, Quit);
+            AddSmallButton(root, "Leaderboard", UIKit.Purple, -480, () => ShowLeaderboard?.Invoke());
+            AddSmallButton(root, "Settings", UIKit.Blue, -160, () => OpenSettings?.Invoke());
+            AddSmallButton(root, "Change Name", UIKit.Orange, 160, () => ChangeName?.Invoke());
+            AddSmallButton(root, "Quit", UIKit.Slate, 480, Quit);
 
             var rules = UIKit.Label(root,
                 "Solve faster for more points. Every mistake costs points. Auto-Solve forfeits all points.",
