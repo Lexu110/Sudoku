@@ -56,7 +56,8 @@ namespace SudokuGame
 
         enum State { Idle, Playing, Won, Forfeited }
 
-        const float CellSize = 80f, Gap = 4f, BoxExtra = 6f, Pad = 16f;
+        const float CellSize = 78f, Gap = 4f, BoxExtra = 14f, Pad = 17f, BoxPad = 5f;
+        static readonly Color BoxColor = new Color(0.42f, 0.52f, 0.88f);
 
         static readonly Color GivenColor = new Color(0.21f, 0.25f, 0.42f);
         static readonly Color EmptyColor = new Color(0.13f, 0.16f, 0.30f);
@@ -120,6 +121,18 @@ namespace SudokuGame
             var board = UIKit.FramedPanel(root, "Board", UIKit.SurfaceLight, 8, 28);
             UIKit.Place(board, UIKit.Center, new Vector2(-295, -45), new Vector2(812, 812));
             var grid = UIKit.Content(board);
+
+            for (int b = 0; b < 9; b++)
+            {
+                Vector2 first = CellCenter(b / 3 * 3, b % 3 * 3);
+                Vector2 last = CellCenter(b / 3 * 3 + 2, b % 3 * 3 + 2);
+                var backdrop = UIKit.Box(grid, "Box" + b, BoxColor, UIKit.Rounded(20));
+                var brt = backdrop.rectTransform;
+                brt.anchorMin = brt.anchorMax = UIKit.TopLeft;
+                brt.pivot = UIKit.Center;
+                brt.anchoredPosition = (first + last) * 0.5f;
+                brt.sizeDelta = new Vector2(last.x - first.x + CellSize + BoxPad * 2, first.y - last.y + CellSize + BoxPad * 2);
+            }
 
             for (int i = 0; i < 81; i++)
             {
