@@ -95,6 +95,31 @@ namespace SudokuGame
             new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
         }
 
+        // With a gamepad, give the active screen (or open dialog) a focused button on the first d-pad/stick/A press.
+        void Update()
+        {
+            var pad = UnityEngine.InputSystem.Gamepad.current;
+            var es = EventSystem.current;
+            if (pad == null || es == null || gameScreen == null) return;
+
+            bool inGame = gameScreen.gameObject.activeInHierarchy;
+            if (inGame && !gameScreen.HasDialog) return;
+
+            var current = es.currentSelectedObject;
+            if (current != null && current.activeInHierarchy) return;
+            if (pad.dpad.ReadValue().sqrMagnitude < 0.01f && pad.leftStick.ReadValue().sqrMagnitude < 0.25f
+                && !pad.buttonSouth.wasPressedThisFrame) return;
+
+            Transform root = inGame ? gameScreen.Dialog.transform : screens.Find(s => s.activeInHierarchy)?.transform;
+            if (root == null) return;
+            foreach (var s in root.GetComponentsInChildren<Selectable>(false))
+            {
+                if (!s.interactable || s is InputField) continue;
+                es.SetSelectedGameObject(s.gameObject);
+                break;
+            }
+        }
+
         void Show(GameObject target)
         {
             foreach (var s in screens) s.SetActive(s == target);

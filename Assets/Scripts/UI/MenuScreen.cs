@@ -11,7 +11,7 @@ namespace SudokuGame
         public Action OpenSettings;
         public Action LogOut;
 
-        Text welcome, rank;
+        Text welcome, rank, padHint;
 
         public static MenuScreen Create(Transform parent)
         {
@@ -56,6 +56,16 @@ namespace SudokuGame
                 "Solve faster for more points. Every mistake costs points. Auto-Solve forfeits all points.",
                 28, UIKit.Muted, TextAnchor.MiddleCenter, false);
             UIKit.Place(rules.rectTransform, UIKit.Center, new Vector2(0, -450), new Vector2(1500, 50));
+
+            padHint = UIKit.Label(root,
+                "Controller detected:  D-pad / Stick  Navigate     A  Select",
+                28, UIKit.Accent, TextAnchor.MiddleCenter, false);
+            UIKit.Place(padHint.rectTransform, UIKit.Center, new Vector2(0, -500), new Vector2(1500, 44));
+        }
+
+        void Update()
+        {
+            padHint.gameObject.SetActive(UnityEngine.InputSystem.Gamepad.current != null);
         }
 
         void AddDifficulty(RectTransform root, Difficulty d, Color color, float y)

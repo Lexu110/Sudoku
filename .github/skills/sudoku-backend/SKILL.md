@@ -21,9 +21,11 @@ Authentication: log in once, keep the `access_token` (JWT, valid 30 days by defa
 | GET | `/scores/me` | yes | `?difficulty=&limit=&offset=` | 200 array of scores, newest first |
 | GET | `/leaderboard` | no | `?difficulty=&limit=&offset=` | 200 array of `{"rank","username","score"}` |
 | GET | `/leaderboard/me` | yes | `?difficulty=` | 200 `{"rank","username","score"}`, 404 if the player has no scores |
+| GET | `/version` | no | `?current=<Application.version>` | 200 `{"latest_version","min_supported_version","download_url","release_notes","update_available","update_required"}` |
 
 ## Rules and constraints
 
+- Auto-update: on startup call `GET /version?current=` + `Application.version` (1-4 dot-separated numbers, e.g. `1.2.0`; anything else gets 422). If `update_required` is true, block play and send the player to `download_url`; if only `update_available` is true, show a dismissible prompt with `release_notes`. `download_url` and `release_notes` can be null. If the call fails, let the player continue.
 - `username`: 3-20 characters, only `A-Za-z0-9_`, unique case-insensitively. Validate client-side to avoid round trips.
 - `password`: 8-128 characters.
 - `difficulty` must be lowercase: `easy`, `medium`, `hard`, `expert`. Serialize the C# enum as a lowercase string, not an int.

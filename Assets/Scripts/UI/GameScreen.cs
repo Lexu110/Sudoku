@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
@@ -78,8 +79,15 @@ namespace SudokuGame
         float elapsed;
         int mistakes;
         int selected = -1;
+        int padDigit = 1;
+        bool padActive;
+        Vector2Int moveDir;
+        float nextMoveTime;
 
-        Text headerText, timeText, mistakeText, levelText;
+        public bool HasDialog => dialog != null;
+        public GameObject Dialog => dialog;
+
+        Text headerText, timeText, mistakeText, levelText, padHint;
         RectTransform selectionFrame;
         Vector2 frameTarget;
         GameObject dialog;
@@ -107,6 +115,11 @@ namespace SudokuGame
 
             BuildBoard(root);
             BuildSidePanel(root);
+
+            padHint = UIKit.Label(root,
+                "Controller:  D-pad / Stick  Move     L1 / R1  Choose number     A  Place     X  Erase     Start  Leave",
+                26, UIKit.Muted, TextAnchor.MiddleCenter, false);
+            UIKit.Place(padHint.rectTransform, UIKit.Center, new Vector2(0, -495), new Vector2(1700, 44));
         }
 
         static Vector2 CellCenter(int row, int col)
@@ -254,6 +267,7 @@ namespace SudokuGame
 
             timeText.text = TimeFormat.Format(elapsed);
             mistakeText.text = mistakes.ToString();
+            padHint.gameObject.SetActive(Gamepad.current != null);
 
             bool showFrame = selected >= 0 && state == State.Playing;
             selectionFrame.gameObject.SetActive(showFrame);
@@ -266,7 +280,51 @@ namespace SudokuGame
                 selectionFrame.GetComponent<Image>().color = c;
             }
 
-            if (state == State.Playing) HandleKeyboard();
+            if (state == State.Playing) { HandleKeyboard(); HandleGamepad(); }
+        }
+
+        // D-pad/left stick move, shoulders pick a digit, A enters it, X erases, Start leaves.
+        void HandleGamepad()
+        {
+            var pad = Gamepad.current;
+            if (pad == null || dialog != null) return;
+
+            // A mouse click selects the cell in the EventSystem, which would make the d-pad navigate the UI.
+            var es = EventSystem.current;
+            if (es != null && es.currentSelectedObject != null) es.SetSelectedGameObject(null);
+
+            if (pad.startButton.wasPressedThisFrame) { padActive = true; AskExit(); return; }
+
+            Vector2 v = pad.dpad.ReadValue();
+            if (v.sqrMagnitude < 0.01f) v = pad.leftStick.ReadValue();
+            var dir = Vector2Int.zero;
+            if (Mathf.Abs(v.x) >= Mathf.Abs(v.y)) dir.x = v.x > 0.5f ? 1 : v.x < -0.5f ? -1 : 0;
+            else dir.y = v.y > 0.5f ? 1 : v.y < -0.5f ? -1 : 0;
+
+            if (dir == Vector2Int.zero) moveDir = dir;
+            else if (dir != moveDir || Time.unscaledTime >= nextMoveTime)
+            {
+                nextMoveTime = Time.unscaledTime + (dir != moveDir ? 0.35f : 0.12f);
+                moveDir = dir;
+                padActive = true;
+                Move(-dir.y, dir.x);
+            }
+
+            if (pad.leftShoulder.wasPressedThisFrame) { padActive = true; CycleDigit(-1); }
+            if (pad.rightShoulder.wasPressedThisFrame) { padActive = true; CycleDigit(1); }
+            if (pad.buttonSouth.wasPressedThisFrame) { padActive = true; Enter(padDigit); }
+            if (pad.buttonWest.wasPressedThisFrame) { padActive = true; Erase(); }
+        }
+
+        // Skips digits that are already fully placed.
+        void CycleDigit(int step)
+        {
+            for (int i = 0; i < 9; i++)
+            {
+                padDigit = (padDigit - 1 + step + 9) % 9 + 1;
+                if (padButtons[padDigit].interactable) break;
+            }
+            Refresh();
         }
 
         void HandleKeyboard()
@@ -461,6 +519,11 @@ namespace SudokuGame
                 padCounts[d].text = left > 0 ? left.ToString() : "";
                 padButtons[d].interactable = left > 0;
             }
+
+            if (!padButtons[padDigit].interactable)
+                for (int i = 0; i < 9 && !padButtons[padDigit].interactable; i++) padDigit = padDigit % 9 + 1;
+            for (int d = 1; d <= 9; d++)
+                padButtons[d].GetComponent<ButtonJuice>().Highlighted = padActive && d == padDigit;
         }
     }
 }

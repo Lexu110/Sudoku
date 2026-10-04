@@ -255,7 +255,7 @@ namespace SudokuGame
                 normalColor = Color.white,
                 highlightedColor = new Color(1.15f, 1.15f, 1.15f),
                 pressedColor = new Color(0.8f, 0.8f, 0.8f),
-                selectedColor = Color.white,
+                selectedColor = new Color(1.15f, 1.15f, 1.15f),
                 disabledColor = new Color(0.5f, 0.5f, 0.5f, 0.8f),
                 colorMultiplier = 1f,
                 fadeDuration = 0.08f
@@ -364,9 +364,14 @@ namespace SudokuGame
     }
 
     /// <summary>Hover grows the button a little, pressing shrinks it.</summary>
-    public class ButtonJuice : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler, IPointerUpHandler
+    public class ButtonJuice : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler, IPointerUpHandler,
+        ISelectHandler, IDeselectHandler
     {
-        bool hover, down;
+        bool hover, down, selected;
+        public bool Highlighted;
+
+        public void OnSelect(BaseEventData e) => selected = true;
+        public void OnDeselect(BaseEventData e) => selected = false;
 
         public void OnPointerEnter(PointerEventData e)
         {
@@ -379,13 +384,13 @@ namespace SudokuGame
 
         void OnDisable()
         {
-            hover = down = false;
+            hover = down = selected = false;
             transform.localScale = Vector3.one;
         }
 
         void Update()
         {
-            float target = down ? 0.95f : hover ? 1.06f : 1f;
+            float target = down ? 0.95f : (hover || selected || Highlighted) ? 1.06f : 1f;
             float k = 1f - Mathf.Exp(-18f * Time.unscaledDeltaTime);
             transform.localScale = Vector3.Lerp(transform.localScale, Vector3.one * target, k);
         }
