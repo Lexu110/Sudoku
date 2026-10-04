@@ -267,7 +267,7 @@ namespace SudokuGame
 
         public static InputField MakeInput(Transform parent, Vector2 size, string placeholder, int maxLength)
         {
-            var panel = FramedPanel(parent, "NicknameInput", Surface, 2, 20);
+            var panel = FramedPanel(parent, "TextInput", Surface, 2, 20);
             panel.sizeDelta = size;
             var inner = Content(panel);
 

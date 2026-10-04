@@ -12,15 +12,18 @@ namespace SudokuGame
     /// </summary>
     public class GameBootstrap : MonoBehaviour
     {
-        NicknameScreen nicknameScreen;
+        AuthScreen authScreen;
         MenuScreen menuScreen;
         GameScreen gameScreen;
         ResultScreen resultScreen;
         LeaderboardScreen leaderboardScreen;
         SettingsScreen settingsScreen;
+        ApiClient api;
         readonly List<GameObject> screens = new List<GameObject>();
 
         Difficulty lastDifficulty = Difficulty.Easy;
+        // A finished game whose score has not been saved yet.
+        GameResult pending;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void AutoStart()
@@ -32,10 +35,11 @@ namespace SudokuGame
         void Start()
         {
             Application.targetFrameRate = 60;
+            api = gameObject.AddComponent<ApiClient>();
             var canvas = BuildCanvas();
             EnsureEventSystem();
 
-            nicknameScreen = NicknameScreen.Create(canvas);
+            authScreen = AuthScreen.Create(canvas);
             menuScreen = MenuScreen.Create(canvas);
             gameScreen = GameScreen.Create(canvas);
             resultScreen = ResultScreen.Create(canvas);
@@ -43,41 +47,31 @@ namespace SudokuGame
             settingsScreen = SettingsScreen.Create(canvas);
             screens.AddRange(new[]
             {
-                nicknameScreen.gameObject, menuScreen.gameObject, gameScreen.gameObject,
+                authScreen.gameObject, menuScreen.gameObject, gameScreen.gameObject,
                 resultScreen.gameObject, leaderboardScreen.gameObject, settingsScreen.gameObject
             });
 
-            nicknameScreen.Confirmed = name =>
-            {
-                SaveData.Current.nickname = name;
-                SaveData.Current.Save();
-                ShowMenu();
-            };
-            nicknameScreen.Cancelled = ShowMenu;
+            authScreen.Submitted = OnAuthSubmitted;
 
             menuScreen.StartGame = StartGame;
             menuScreen.ShowLeaderboard = ShowLeaderboard;
             menuScreen.OpenSettings = () => Show(settingsScreen.gameObject);
-            menuScreen.ChangeName = () =>
+            menuScreen.LogOut = () =>
             {
-                Show(nicknameScreen.gameObject);
-                nicknameScreen.Show(SaveData.Current.nickname, true);
+                SaveData.Current.ClearSession();
+                ShowAuth(null);
             };
 
             gameScreen.Finished = OnGameFinished;
             gameScreen.ExitRequested = ShowMenu;
 
-            resultScreen.PlayAgain = () => StartGame(lastDifficulty);
-            resultScreen.ToMenu = ShowMenu;
+            resultScreen.PlayAgain = () => { pending = null; StartGame(lastDifficulty); };
+            resultScreen.ToMenu = () => { pending = null; ShowMenu(); };
+            resultScreen.Retry = () => { if (pending != null) SubmitScore(pending); };
             leaderboardScreen.Back = ShowMenu;
             settingsScreen.Back = ShowMenu;
 
-            if (string.IsNullOrEmpty(SaveData.Current.nickname))
-            {
-                Show(nicknameScreen.gameObject);
-                nicknameScreen.Show("", false);
-            }
-            else ShowMenu();
+            StartSession();
         }
 
         Transform BuildCanvas()
@@ -105,43 +99,119 @@ namespace SudokuGame
             foreach (var s in screens) s.SetActive(s == target);
         }
 
+        // ---------- Login ----------
+
+        void StartSession()
+        {
+            if (!SaveData.Current.HasSession)
+            {
+                ShowAuth(null);
+                return;
+            }
+
+            Show(authScreen.gameObject);
+            authScreen.SetBusy("Signing you in...");
+            api.CheckSession(state =>
+            {
+                if (state == SessionState.Expired) ShowAuth("Your session expired. Please log in again.");
+                else ShowMenu();
+            });
+        }
+
+        void ShowAuth(string message)
+        {
+            Show(authScreen.gameObject);
+            authScreen.Open(message);
+        }
+
+        void OnAuthSubmitted(string username, string password, bool register)
+        {
+            authScreen.SetBusy(register ? "Creating your account..." : "Logging in...");
+            System.Action<string> done = error =>
+            {
+                if (error != null) authScreen.ShowError(error);
+                else AfterLogin();
+            };
+            if (register) api.Register(username, password, done);
+            else api.Login(username, password, done);
+        }
+
+        void AfterLogin()
+        {
+            if (pending == null)
+            {
+                ShowMenu();
+                return;
+            }
+            Show(resultScreen.gameObject);
+            resultScreen.Show(pending);
+            SubmitScore(pending);
+        }
+
+        // ---------- Screens ----------
+
         void ShowMenu()
         {
             Show(menuScreen.gameObject);
-            menuScreen.Show(SaveData.Current.nickname);
+            menuScreen.Show(SaveData.Current.username);
+            api.GetMyRank(null, result =>
+            {
+                if (!menuScreen.gameObject.activeSelf) return;
+                if (result.sessionExpired) ShowAuth("Your session expired. Please log in again.");
+                else if (result.Ok)
+                    menuScreen.SetRank(result.data == null ? "No rank yet" : $"Rank #{result.data.rank}  -  {result.data.score} pts");
+            });
         }
 
         void ShowLeaderboard()
         {
             Show(leaderboardScreen.gameObject);
-            leaderboardScreen.Show(SaveData.Current.nickname);
+            leaderboardScreen.Show(SaveData.Current.username);
         }
 
         void StartGame(Difficulty d)
         {
             lastDifficulty = d;
             Show(gameScreen.gameObject);
-            gameScreen.Begin(d, SaveData.Current.nickname);
+            gameScreen.Begin(d, SaveData.Current.username);
         }
 
         void OnGameFinished(GameResult result)
         {
-            int rank = 0;
-            if (!result.forfeited)
-            {
-                var entry = new ScoreEntry
-                {
-                    nickname = SaveData.Current.nickname,
-                    score = result.score,
-                    difficulty = (int)result.difficulty,
-                    seconds = result.seconds,
-                    mistakes = result.mistakes
-                };
-                SaveData.Current.AddScore(entry);
-                rank = SaveData.Current.scores.IndexOf(entry) + 1;
-            }
             Show(resultScreen.gameObject);
-            resultScreen.Show(result, rank);
+            resultScreen.Show(result);
+            if (result.forfeited) return;
+
+            pending = result;
+            SubmitScore(result);
+        }
+
+        void SubmitScore(GameResult result)
+        {
+            resultScreen.ShowSubmitting();
+            api.SubmitScore(result.difficulty, result.seconds, result.mistakes, response =>
+            {
+                // The player already left the result screen.
+                if (pending != result) return;
+
+                if (response.sessionExpired)
+                {
+                    ShowAuth("Your session expired. Log in to save your score.");
+                    return;
+                }
+                if (!response.Ok)
+                {
+                    resultScreen.ShowError(response.error);
+                    return;
+                }
+
+                pending = null;
+                resultScreen.ShowScore(response.data);
+                api.GetMyRank(result.difficulty, rank =>
+                {
+                    if (rank.Ok) resultScreen.ShowRank(rank.data, result.difficulty);
+                });
+            });
         }
     }
 }

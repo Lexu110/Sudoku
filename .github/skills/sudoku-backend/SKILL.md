@@ -5,8 +5,8 @@ description: How to call the Sudoku backend API from the Unity game — register
 
 ## Overview
 
-REST/JSON API (FastAPI) at `https://<API_HOST>/api/v1`, served over HTTPS via Traefik. Ask the user for the production host if it isn't already defined in the Unity project; keep it in a single config constant.
-Interactive docs: `https://<API_HOST>/docs`.
+REST/JSON API (FastAPI) at `https://sudoku.lcorream.com/api/v1`, served over HTTPS via Traefik. Ask the user for the production host if it isn't already defined in the Unity project; keep it in a single config constant.
+Interactive docs: `https://sudoku.lcorream.com/docs`.
 
 Authentication: log in once, keep the `access_token` (JWT, valid 30 days by default), and send `Authorization: Bearer <token>` on protected calls. There is no refresh endpoint: on any `401`, discard the token and send the player back to login.
 

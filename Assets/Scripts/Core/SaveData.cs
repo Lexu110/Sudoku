@@ -1,60 +1,53 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace SudokuGame
 {
-    [Serializable]
-    public class ScoreEntry
-    {
-        public string nickname;
-        public int score;
-        public int difficulty;
-        public float seconds;
-        public int mistakes;
-    }
-
-    /// <summary>Nickname + leaderboard, stored as JSON in PlayerPrefs (works on Mac, Windows and Linux).</summary>
+    /// <summary>The logged-in player's username and JWT, stored in PlayerPrefs. The password is never stored.</summary>
     [Serializable]
     public class SaveData
     {
-        const string Key = "sudoku_save_v1";
-        const int MaxEntries = 100;
+        const string Key = "sudoku_save_v2";
+        const string OldKey = "sudoku_save_v1";
 
-        public string nickname = "";
-        public List<ScoreEntry> scores = new List<ScoreEntry>();
+        public string username = "";
+        public string token = "";
 
         static SaveData current;
 
         public static SaveData Current => current ??= Load();
 
+        public bool HasSession => !string.IsNullOrEmpty(token) && !string.IsNullOrEmpty(username);
+
         static SaveData Load()
         {
+            // The old version kept a local-only nickname and leaderboard.
+            if (PlayerPrefs.HasKey(OldKey)) PlayerPrefs.DeleteKey(OldKey);
+
             string json = PlayerPrefs.GetString(Key, "");
             if (string.IsNullOrEmpty(json)) return new SaveData();
             try { return JsonUtility.FromJson<SaveData>(json) ?? new SaveData(); }
             catch (Exception) { return new SaveData(); }
         }
 
-        public void Save()
+        void Save()
         {
             PlayerPrefs.SetString(Key, JsonUtility.ToJson(this));
             PlayerPrefs.Save();
         }
 
-        public void AddScore(ScoreEntry entry)
+        public void SetSession(string user, string accessToken)
         {
-            scores.Add(entry);
-            scores.Sort((a, b) => b.score.CompareTo(a.score));
-            if (scores.Count > MaxEntries) scores.RemoveRange(MaxEntries, scores.Count - MaxEntries);
+            username = user;
+            token = accessToken;
             Save();
         }
 
-        public int TotalPointsFor(string name)
+        public void ClearSession()
         {
-            int total = 0;
-            foreach (var s in scores) if (s.nickname == name) total += s.score;
-            return total;
+            username = "";
+            token = "";
+            Save();
         }
     }
 }

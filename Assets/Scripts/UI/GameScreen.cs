@@ -11,7 +11,6 @@ namespace SudokuGame
         public Difficulty difficulty;
         public float seconds;
         public int mistakes;
-        public int score;
         public bool forfeited;
     }
 
@@ -79,7 +78,7 @@ namespace SudokuGame
         int mistakes;
         int selected = -1;
 
-        Text headerText, timeText, mistakeText, scoreText;
+        Text headerText, timeText, mistakeText, levelText;
         RectTransform selectionFrame;
         Vector2 frameTarget;
         GameObject dialog;
@@ -160,7 +159,8 @@ namespace SudokuGame
 
             timeText = Plaque(content, "TIME", 14);
             mistakeText = Plaque(content, "MISTAKES", 178);
-            scoreText = Plaque(content, "SCORE", 342);
+            levelText = Plaque(content, "LEVEL", 342);
+            levelText.fontSize = 30;
 
             for (int d = 1; d <= 9; d++)
             {
@@ -200,7 +200,7 @@ namespace SudokuGame
 
         // ---------- Game flow ----------
 
-        public void Begin(Difficulty d, string nickname)
+        public void Begin(Difficulty d, string username)
         {
             CloseDialog();
             StopAllCoroutines();
@@ -217,7 +217,8 @@ namespace SudokuGame
             mistakes = 0;
             selected = -1;
             state = State.Playing;
-            headerText.text = $"{nickname}  -  {d}";
+            headerText.text = $"{username}  -  {d}";
+            levelText.text = d.ToString();
 
             for (int i = 0; i < 81; i++)
             {
@@ -238,9 +239,8 @@ namespace SudokuGame
         {
             if (state == State.Playing) elapsed += Time.unscaledDeltaTime;
 
-            timeText.text = ScoreRules.FormatTime(elapsed);
+            timeText.text = TimeFormat.Format(elapsed);
             mistakeText.text = mistakes.ToString();
-            scoreText.text = state == State.Forfeited ? "0" : ScoreRules.Calculate(difficulty, elapsed, mistakes).ToString();
 
             bool showFrame = selected >= 0 && state == State.Playing;
             selectionFrame.gameObject.SetActive(showFrame);
@@ -330,8 +330,7 @@ namespace SudokuGame
                 difficulty = difficulty,
                 seconds = elapsed,
                 mistakes = mistakes,
-                forfeited = forfeited,
-                score = forfeited ? 0 : ScoreRules.Calculate(difficulty, elapsed, mistakes)
+                forfeited = forfeited
             };
         }
 

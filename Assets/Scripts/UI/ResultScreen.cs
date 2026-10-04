@@ -4,14 +4,15 @@ using UnityEngine.UI;
 
 namespace SudokuGame
 {
+    /// <summary>Shows the finished game. The score comes from the backend, so it appears after the submit call returns.</summary>
     public class ResultScreen : MonoBehaviour
     {
         public Action PlayAgain;
         public Action ToMenu;
+        public Action Retry;
 
-        Text title, difficultyValue, timeValue, mistakesValue;
-        Text startValue, timePenaltyValue, mistakePenaltyValue, totalValue, rankText, forfeitText;
-        GameObject breakdown;
+        Text title, difficultyValue, timeValue, mistakesValue, scoreValue, statusText, rankText;
+        GameObject retryButton;
 
         public static ResultScreen Create(Transform parent)
         {
@@ -43,20 +44,17 @@ namespace SudokuGame
             var divider = UIKit.Box(content, "Divider", new Color(1, 1, 1, 0.15f));
             UIKit.Place(divider.rectTransform, UIKit.TopCenter, new Vector2(0, -350), new Vector2(700, 3));
 
-            var group = UIKit.NewRect(content, "Breakdown");
-            UIKit.Stretch(group);
-            breakdown = group.gameObject;
-            startValue = Row(group, "Starting points", -375, 34, UIKit.TextLight);
-            timePenaltyValue = Row(group, "Time penalty", -430, 34, new Color(1f, 0.6f, 0.5f));
-            mistakePenaltyValue = Row(group, "Mistake penalty", -485, 34, new Color(1f, 0.6f, 0.5f));
-            totalValue = Row(group, "TOTAL", -560, 60, UIKit.Accent);
+            scoreValue = Row(content, "SCORE", -385, 60, UIKit.Accent);
 
-            forfeitText = UIKit.Label(content, "Auto-Solve was used.\nAll points are forfeited.", 40,
-                new Color(1f, 0.6f, 0.5f));
-            UIKit.Place(forfeitText.rectTransform, UIKit.TopCenter, new Vector2(0, -420), new Vector2(760, 150));
+            statusText = UIKit.Label(content, "", 32, UIKit.Muted, TextAnchor.MiddleCenter, false);
+            UIKit.Place(statusText.rectTransform, UIKit.TopCenter, new Vector2(0, -490), new Vector2(760, 100));
 
             rankText = UIKit.Label(content, "", 34, UIKit.Muted, TextAnchor.MiddleCenter, false);
-            UIKit.Place(rankText.rectTransform, UIKit.TopCenter, new Vector2(0, -660), new Vector2(760, 50));
+            UIKit.Place(rankText.rectTransform, UIKit.TopCenter, new Vector2(0, -600), new Vector2(760, 50));
+
+            var retry = UIKit.MakeButton(content, "Retry", new Vector2(340, 80), UIKit.Orange, () => Retry?.Invoke(), 34);
+            UIKit.Place((RectTransform)retry.transform, new Vector2(0.5f, 0f), new Vector2(0, 170), new Vector2(340, 80));
+            retryButton = retry.gameObject;
 
             var again = UIKit.MakeButton(content, "Play Again", new Vector2(340, 90), UIKit.Green, () => PlayAgain?.Invoke(), 38);
             UIKit.Place((RectTransform)again.transform, new Vector2(0.5f, 0f), new Vector2(-190, 50), new Vector2(340, 90));
@@ -74,30 +72,59 @@ namespace SudokuGame
             return right;
         }
 
-        /// <param name="rank">1-based leaderboard position, or 0 when the game was not recorded.</param>
-        public void Show(GameResult r, int rank)
+        public void Show(GameResult r)
         {
-            var d = r.difficulty;
-            difficultyValue.text = d.ToString();
-            timeValue.text = ScoreRules.FormatTime(r.seconds);
+            difficultyValue.text = r.difficulty.ToString();
+            timeValue.text = TimeFormat.Format(r.seconds);
             mistakesValue.text = r.mistakes.ToString();
-
-            breakdown.SetActive(!r.forfeited);
-            forfeitText.gameObject.SetActive(r.forfeited);
-            title.text = r.forfeited ? "Puzzle Solved" : "VICTORY!";
-            title.color = r.forfeited ? UIKit.TextLight : UIKit.Accent;
+            rankText.text = "";
+            retryButton.SetActive(false);
 
             if (r.forfeited)
             {
-                rankText.text = "This game does not count for the leaderboard.";
+                title.text = "Puzzle Solved";
+                title.color = UIKit.TextLight;
+                scoreValue.text = "0";
+                SetStatus("Auto-Solve was used. All points are forfeited and this game is not saved to the leaderboard.", false);
                 return;
             }
 
-            startValue.text = "+" + ScoreRules.StartingPoints(d);
-            timePenaltyValue.text = "-" + ScoreRules.TimePenalty(d, r.seconds);
-            mistakePenaltyValue.text = "-" + ScoreRules.MistakePenalty(d, r.mistakes);
-            totalValue.text = r.score.ToString();
-            rankText.text = rank > 0 ? $"Leaderboard position: #{rank}" : "";
+            title.text = "VICTORY!";
+            title.color = UIKit.Accent;
+            ShowSubmitting();
+        }
+
+        public void ShowSubmitting()
+        {
+            scoreValue.text = "...";
+            rankText.text = "";
+            retryButton.SetActive(false);
+            SetStatus("Saving your score...", false);
+        }
+
+        public void ShowScore(ScoreOut score)
+        {
+            scoreValue.text = score.score.ToString();
+            retryButton.SetActive(false);
+            SetStatus("Score saved to the leaderboard.", false);
+        }
+
+        public void ShowRank(LeaderboardEntry entry, Difficulty difficulty)
+        {
+            rankText.text = entry == null ? "" : $"{difficulty} rank: #{entry.rank}";
+        }
+
+        public void ShowError(string message)
+        {
+            scoreValue.text = "-";
+            retryButton.SetActive(true);
+            SetStatus("Couldn't save your score. " + message, true);
+        }
+
+        void SetStatus(string message, bool isError)
+        {
+            statusText.text = message;
+            statusText.color = isError ? new Color(1f, 0.55f, 0.5f) : UIKit.Muted;
         }
     }
 }

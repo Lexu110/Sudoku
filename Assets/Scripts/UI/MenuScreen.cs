@@ -9,9 +9,9 @@ namespace SudokuGame
         public Action<Difficulty> StartGame;
         public Action ShowLeaderboard;
         public Action OpenSettings;
-        public Action ChangeName;
+        public Action LogOut;
 
-        Text welcome, total;
+        Text welcome, rank;
 
         public static MenuScreen Create(Transform parent)
         {
@@ -40,8 +40,8 @@ namespace SudokuGame
             UIKit.Place(plaque, UIKit.TopLeft, new Vector2(40, -40), new Vector2(460, 120));
             welcome = UIKit.Label(UIKit.Content(plaque), "", 36, UIKit.TextLight, TextAnchor.MiddleLeft);
             UIKit.Place(welcome.rectTransform, UIKit.TopLeft, new Vector2(25, -12), new Vector2(400, 50));
-            total = UIKit.Label(UIKit.Content(plaque), "", 28, UIKit.Accent, TextAnchor.MiddleLeft, false);
-            UIKit.Place(total.rectTransform, UIKit.TopLeft, new Vector2(25, -62), new Vector2(400, 40));
+            rank = UIKit.Label(UIKit.Content(plaque), "", 28, UIKit.Accent, TextAnchor.MiddleLeft, false);
+            UIKit.Place(rank.rectTransform, UIKit.TopLeft, new Vector2(25, -62), new Vector2(420, 40));
 
             AddDifficulty(root, Difficulty.Easy, UIKit.Green, 80);
             AddDifficulty(root, Difficulty.Medium, UIKit.Blue, -50);
@@ -49,7 +49,7 @@ namespace SudokuGame
 
             AddSmallButton(root, "Leaderboard", UIKit.Purple, -480, () => ShowLeaderboard?.Invoke());
             AddSmallButton(root, "Settings", UIKit.Blue, -160, () => OpenSettings?.Invoke());
-            AddSmallButton(root, "Change Name", UIKit.Orange, 160, () => ChangeName?.Invoke());
+            AddSmallButton(root, "Log Out", UIKit.Orange, 160, () => LogOut?.Invoke());
             AddSmallButton(root, "Quit", UIKit.Slate, 480, Quit);
 
             var rules = UIKit.Label(root,
@@ -60,7 +60,7 @@ namespace SudokuGame
 
         void AddDifficulty(RectTransform root, Difficulty d, Color color, float y)
         {
-            var b = UIKit.MakeButton(root, $"{d}  -  up to {ScoreRules.StartingPoints(d)} pts", new Vector2(640, 110), color,
+            var b = UIKit.MakeButton(root, d.ToString(), new Vector2(640, 110), color,
                 () => StartGame?.Invoke(d), 38);
             UIKit.Place((RectTransform)b.transform, UIKit.Center, new Vector2(0, y), new Vector2(640, 110));
         }
@@ -80,10 +80,15 @@ namespace SudokuGame
 #endif
         }
 
-        public void Show(string nickname)
+        public void Show(string username)
         {
-            welcome.text = nickname;
-            total.text = $"Total points: {SaveData.Current.TotalPointsFor(nickname)}";
+            welcome.text = username;
+            rank.text = "";
+        }
+
+        public void SetRank(string text)
+        {
+            rank.text = text;
         }
     }
 }
